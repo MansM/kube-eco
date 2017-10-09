@@ -5,7 +5,7 @@
 - brew ( https://brew.sh/ )
 - ansible (brew install ansible )
 - minikube ( brew cask install minikube )
-- kubectl ( brew install kubernetes-cli )
+- kubectl ( brew install kubernetes-cli ) (when you install the current version it will not work as the kubectl v1.8.0 does not work with kubernetes v.1.7.5, brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/1e866e9cd915c37184c248fb726775ff8a30c91e/Formula/kubernetes-cli.rb does work)
 - dnsmasq ( brew install dnsmasq )
 - in your sudoers file: username ALL=NOPASSWD: /usr/local/bin/brew services restart dnsmasq
 - probably more... when you find it, please create an issue

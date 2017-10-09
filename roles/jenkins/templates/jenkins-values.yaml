@@ -6,7 +6,7 @@
 Master:
   Name: jenkins-master
   Image: "jenkinsci/jenkins"
-  ImageTag: "2.82"
+  ImageTag: {{ jenkins_version }}
   ImagePullPolicy: "Always"
   Component: "jenkins-master"
   UseSecurity: true
@@ -92,7 +92,7 @@ Master:
 
       desc.save()
 
-      Credentials c = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "demo", "description:", "root", "password")
+      Credentials c = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "demo", "description:", "root", "{{ gitlab_root_password }}")
       SystemCredentialsProvider.getInstance().getStore().addCredentials(Domain.global(), c)
 
 

@@ -5,6 +5,10 @@
   ignore_errors: true
   changed_when: false
 
+- name: add incubator registry
+  local_action:
+    shell helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
+    
 - name: install registry through helm
   local_action:
     shell helm install --name registry incubator/docker-registry
