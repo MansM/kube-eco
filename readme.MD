@@ -11,7 +11,13 @@
 - probably more... when you find it, please create an issue
 - RAM, lots of it ;-) (default setting is now 8192MB for the VM)
 
-# urls after running:
+## How to run
+```
+ansible-playbook setup.yaml
+```
+coffee! it takes a while (especially on slow internet connections)
+
+## urls after running:
 - http://dashboard.example.com
 - http://jenkins.example.com
 - http://gitlab.example.com
