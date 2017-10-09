@@ -136,6 +136,8 @@ Master:
       def flowDefinition = new org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition(scm, "Jenkinsfile")
       def job = new org.jenkinsci.plugins.workflow.job.WorkflowJob(inst, "Demo Job")
       job.definition = flowDefinition
+      
+      inst.save()
       inst.reload()
 
 #  - |
