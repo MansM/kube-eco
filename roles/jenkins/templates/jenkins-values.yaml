@@ -108,10 +108,10 @@ Master:
       p.setRemoteFs('/home/jenkins')
 
 
-      c = new ContainerTemplate("buildslave", "registry.example.com:80/slave", "","")
+      c = new ContainerTemplate("buildslave", "registry.example.com:80/jenkins-slave-klar", "","")
       c.setArgs("\${computer.jnlpmac} \${computer.name}")
 
-      ContainerEnvVar te_url = new ContainerEnvVar("JENKINS_URL", "http://jenkins.example.com");
+      ContainerEnvVar te_url = new ContainerEnvVar("JENKINS_URL", "http://jenkins-jenkins:8080");
       c.setEnvVars(Arrays.asList(te_url));
 
       PodVolume pvsock = new HostPathVolume("/var/run/docker.sock", "/var/run/docker.sock");
@@ -125,9 +125,7 @@ Master:
       Credentials c = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "demo", "description:", "root", "{{ gitlab_root_password }}")
       SystemCredentialsProvider.getInstance().getStore().addCredentials(Domain.global(), c)
 
-
-      def scm = new GitSCM("http://gitlab-gitlab-ce.default/Demo/demorepo.git")
-      scm =  new GitSCM( scm.createRepoList("http://gitlab-gitlab-ce.default/Demo/demorepo.git", "demo"), 
+      def scm =  new GitSCM( GitSCM.createRepoList("http://gitlab-gitlab-ce.default/Demo/demorepo.git", "demo"), 
                          Collections.singletonList(new BranchSpec("*/master")),
                          false, Collections.<SubmoduleConfig>emptyList(),
                          null, null,
@@ -139,6 +137,7 @@ Master:
       
       inst.save()
       inst.reload()
+      job.scheduleBuild()
 
 #  - |
   #  print 'adding global pipeline libraries, register properties, bootstrap jobs...'
@@ -162,7 +161,7 @@ Master:
 Agent:
   Enabled: true
   Image: jenkinsci/jnlp-slave
-  ImageTag: 2.62
+  ImageTag: 3.7-1
   Component: "jenkins-slave"
   Privileged: true
   Cpu: "200m"

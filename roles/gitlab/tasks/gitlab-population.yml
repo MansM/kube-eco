@@ -43,29 +43,29 @@
   register: readmedata
 
 - name: remove git config
-  file: name="repo/.git" state=absent
+  file: name="repos/buildslave/.git" state=absent
   when: readmedata.status == 303
 
 - name: create git repo
   shell: git init
   args:
-    chdir: repo/
+    chdir: repos/buildslave/
   when: readmedata.status == 303
 
 - name: config gitrepo
   shell: git remote add origin http://root:password@{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}/Demo/demorepo.git
   args:
-    chdir: repo/
+    chdir: repos/buildslave/
   when: readmedata.status == 303
 
 - name: create readme.md file
-  file: name="repo/readme.md" state=touch
+  file: name="repos/buildslave/readme.md" state=touch
   when: readmedata.status == 303
 
 - name: commit & push
   shell: git add . && git commit -m "initial" && git push -u origin master
   args:
-    chdir: repo/
+    chdir: repos/buildslave/
   when: readmedata.status == 303
 
 - name: create initial tag
