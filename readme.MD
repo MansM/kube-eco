@@ -2,7 +2,8 @@
 
 ## Requirements:
 - macOS
-- brew ( https://brew.sh/ ) 
+- brew ( https://brew.sh/ )
+- ansible (brew install ansible )
 - minikube ( brew cask install minikube )
 - kubectl ( brew install kubernetes-cli )
 - dnsmasq ( brew install dnsmasq )
