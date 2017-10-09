@@ -1,0 +1,58 @@
+- name: check for minikube ingress setting
+  assert:
+    that:
+      - "{{ minikube.ingress }} == true"
+    msg: "please enable ingress addon in minikube settings ( minikube addons enable ingress )"
+  vars:
+    minikube: "{{ lookup('file', '~/.minikube/config/config.json') | from_json }}"
+
+- name: check for minikube dashboard setting
+  assert:
+    that:
+      - "{{ minikube.dashboard }} == true"
+    msg: "please enable dashboard addon in minikube settings ( minikube addons enable dashboard )"
+  vars:
+    minikube: "{{ lookup('file', '~/.minikube/config/config.json') | from_json }}"
+
+- name: check for minikube registry setting
+  assert:
+    that:
+      - "{{ minikube.registry }} == false"
+    msg: "please disable registry addon in minikube settings ( minikube addons disable registry )"
+  vars:
+    minikube: "{{ lookup('file', '~/.minikube/config/config.json') | from_json }}"
+
+- name: check for resolver file
+  stat:
+    path: /etc/resolver/example.com
+  register: resolver
+
+- name: resolver file
+  assert:
+    that:
+      - "{{ resolver.stat.exists }} == true"
+    msg: "setup resolver settings"
+
+- name: check for dnsmasq
+  stat:
+    path: /usr/local/sbin/dnsmasq
+  register: dnsmasq
+
+- name: dnsmasq available
+  assert:
+    that:
+      - "{{ dnsmasq.stat.exists }} == true"
+    msg: "install dnsmasq"
+
+- name: check for minikube
+  stat:
+    path: /usr/local/bin/minikube
+  register: minikube
+
+- name: minikube available
+  assert:
+    that:
+      - "{{ minikube.stat.exists }} == true"
+    msg: "install minikube"
+
+    

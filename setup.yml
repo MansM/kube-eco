@@ -4,6 +4,7 @@
   environment:
     PYTHONPATH: /usr/local/lib/python2.7/site-packages
   roles:
+    - preflight
     - minikube
     - helm
     - registry

@@ -19,6 +19,10 @@ coffee! it takes a while (especially on slow internet connections)
 on my 2015 mbp with 150MBit it takes about 10 minutes
 
 to clean it up: minikube delete
+want to access the docker deamon inside: 
+```
+eval $(minikube docker-env) && docker ps
+```
 
 ## urls after running:
 - http://dashboard.example.com
@@ -38,3 +42,22 @@ to clean it up: minikube delete
 - LDAP
 - keycloak or dex (maybeish)
 - calico/canal when this can actually work in minikube
+
+
+## Preflight sollutions
+
+### Resolver settings
+```
+mkdir -p /etc/resolver
+echo "nameserver 127.0.0.1 > /etc/resolver/example.com
+```
+
+### install dnsmasq
+```
+brew install dnsmasq
+```
+
+### install minikube
+```
+brew cask install minikube
+```

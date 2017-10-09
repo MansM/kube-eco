@@ -68,16 +68,24 @@ Master:
   InitScripts:
   - |
       import java.util.Collections;
+
       import jenkins.model.*
+
       import org.jenkinsci.plugins.docker.commons.*
       import org.jenkinsci.plugins.docker.commons.tools.*
+
       import hudson.plugins.git.*
+      import hudson.plugins.git.extensions.GitSCMExtension;
       import hudson.tools.ToolLocationNodeProperty;
       import hudson.tools.ToolProperty;
+
+
       import com.cloudbees.plugins.credentials.impl.*;
       import com.cloudbees.plugins.credentials.*;
       import com.cloudbees.plugins.credentials.domains.*;
-      import hudson.plugins.git.extensions.GitSCMExtension;
+
+      import org.csanchez.jenkins.plugins.kubernetes.volumes.*;
+      import org.csanchez.jenkins.plugins.kubernetes.*
 
 
       def inst = Jenkins.getInstance()
@@ -91,6 +99,28 @@ Master:
       desc.setInstallations(dinst)
 
       desc.save()
+
+      k = inst.getCloud("kubernetes")
+
+      def p = new PodTemplate()
+      p.setName('buildslave')
+      p.setLabel('clair')
+      p.setRemoteFs('/home/jenkins')
+
+
+      c = new ContainerTemplate("buildslave", "registry.example.com:80/slave", "","")
+      c.setArgs("\${computer.jnlpmac} \${computer.name}")
+
+      ContainerEnvVar te_url = new ContainerEnvVar("JENKINS_URL", "http://jenkins.example.com");
+      c.setEnvVars(Arrays.asList(te_url));
+
+      PodVolume pvsock = new HostPathVolume("/var/run/docker.sock", "/var/run/docker.sock");
+      PodVolume pvbin = new HostPathVolume("/bin/docker", "/bin/docker");
+
+      p.getContainers().add(c);
+      p.setVolumes(Arrays.asList(pvsock, pvbin));
+
+      k.addTemplate(p)
 
       Credentials c = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "demo", "description:", "root", "{{ gitlab_root_password }}")
       SystemCredentialsProvider.getInstance().getStore().addCredentials(Domain.global(), c)

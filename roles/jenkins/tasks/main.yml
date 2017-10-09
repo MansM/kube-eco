@@ -28,7 +28,7 @@
 
 - name: open docker.sock for jenkins
   local_action:
-    shell ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /Users/mansmatulewicz/.minikube/machines/minikube/id_rsa docker@{{ minikube_ip.stdout }}  sudo chmod 666 /var/run/docker.sock
+    shell ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.minikube/machines/minikube/id_rsa docker@{{ minikube_ip.stdout }}  sudo chmod 666 /var/run/docker.sock
   changed_when: false
 
 - name: create jenkins ingress yaml
