@@ -1,0 +1,87 @@
+- name: get login token
+  uri:
+    url: http://{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}/api/v4/session
+    body: "login=root&password=password"
+    return_content: yes
+    follow_redirects: yes
+    method: POST
+    status_code: 200,201
+  register: logindata
+
+- name: Create Gitlab Group
+  gitlab_group:
+    server_url: http://{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}
+    login_user: root
+    login_password: password
+    name: Demo
+    path: Demo
+    state: present
+
+- name: Create Gitlab project
+  gitlab_project:
+    server_url: http://{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}
+    login_user: root
+    login_password: password
+    name: demorepo
+    group: Demo
+    description: demo-repo
+    issues_enabled: true
+    wiki_enabled: True
+    snippets_enabled: True
+    state: present
+  register: result
+
+- name: detect if repo already contains content
+  uri:
+    url: http://{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}/Demo/demorepo/blob/master/readme.md
+    headers:
+      PRIVATE-TOKEN: "{{ logindata.json.private_token }}"
+    return_content: yes
+    follow_redirects: no
+    method: GET
+    status_code: 200,303
+  register: readmedata
+
+- name: remove git config
+  file: name="repo/.git" state=absent
+  when: readmedata.status == 303
+
+- name: create git repo
+  shell: git init
+  args:
+    chdir: repo/
+  when: readmedata.status == 303
+
+- name: config gitrepo
+  shell: git remote add origin http://root:password@{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}/Demo/demorepo.git
+  args:
+    chdir: repo/
+  when: readmedata.status == 303
+
+- name: create readme.md file
+  file: name="repo/readme.md" state=touch
+  when: readmedata.status == 303
+
+- name: commit & push
+  shell: git add . && git commit -m "initial" && git push -u origin master
+  args:
+    chdir: repo/
+  when: readmedata.status == 303
+
+- name: create initial tag
+  uri:
+    url: http://{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}/api/v4/projects/1/repository/tags
+    method: POST
+    body_format: json
+    body:
+      id: Demo%2Fdemorepo
+      tag_name: 1
+      ref: master
+    headers:
+      PRIVATE-TOKEN: "{{ logindata.json.private_token }}"
+      Content-Type: "application/json"
+    return_content: yes
+    follow_redirects: yes
+    status_code: 200,201
+  delegate_to: localhost
+  when: readmedata.status == 303

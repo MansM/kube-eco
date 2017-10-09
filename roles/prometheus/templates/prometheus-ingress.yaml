@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: prometheus
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: prometheus.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: prometheus-prometheus-server
+          servicePort: 80
+  - host: alerts.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: prometheus-prometheus-alertmanager
+          servicePort: 80

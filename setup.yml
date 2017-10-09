@@ -1,0 +1,13 @@
+- hosts: localhost
+  become: false
+  gather_facts: False
+  environment:
+    PYTHONPATH: /usr/local/lib/python2.7/site-packages
+  roles:
+    - minikube
+    - helm
+    - registry
+    - jenkins
+    - gitlab
+    - prometheus
+    

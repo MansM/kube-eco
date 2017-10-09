@@ -1,0 +1,61 @@
+  - name: create rbac.yaml
+    local_action:
+      template src=helm-rbac.yaml dest=./yamls/helm-rbac.yaml
+  
+  - name: create rbac for tiller
+    local_action:
+      shell kubectl apply -f ./yamls/helm-rbac.yaml
+
+  - name: check for helm
+    local_action:
+      shell helm list
+    register: helm_status
+    ignore_errors: true
+    changed_when: false
+
+  - name: install helm
+    local_action:
+      shell helm init --service-account tiller
+    when: helm_status.rc != 0
+
+  - name: check for helm finished installing
+    local_action:
+      shell helm list
+    until: result.rc != 1
+    retries: 20
+    delay: 30
+    register: result
+    when: helm_status.rc != 0
+
+  - name: check for heapster
+    local_action:
+      shell helm status heapster
+    register: heapster_status
+    ignore_errors: true
+    changed_when: false
+    when: heapster_enabled == true
+
+  - name: install heapster through helm
+    local_action:
+      shell helm install stable/heapster --namespace=kube-system --name=heapster
+    when: heapster_status.rc != 0
+
+  - name: check for heapster
+    local_action: 
+      shell kubectl get pods -n kube-system -l app=heapster-heapster -o jsonpath={.items[0].status.phase}
+    changed_when: false
+    register: result
+    until: result.stdout.find("Running") != -1
+    retries: 20
+    delay: 20
+    when: heapster_status.rc != 0
+
+  - name: scale dashboard down to reset
+    local_action:
+      shell kubectl scale rc kubernetes-dashboard -n kube-system --replicas=0
+    changed_when: false
+
+  - name: scale dashboard up to interface with heapster
+    local_action:
+      shell kubectl scale rc kubernetes-dashboard -n kube-system --replicas=1
+    changed_when: false

@@ -1,0 +1,32 @@
+- name: check for jenkins
+  local_action:
+    shell helm status prometheus
+  register: prometheus_status
+  ignore_errors: true
+  changed_when: false
+
+- name: create prometheus values yaml
+  local_action:
+    template src=prometheus-values.yaml dest=./yamls/prometheus-values.yaml
+
+# - name: create prometheus ingress yaml
+#   local_action:
+#     template src=prometheus-ingress.yaml dest=./yamls/prometheus-ingress.yaml
+
+- name: install prometheus through helm
+  local_action:
+    shell helm install stable/prometheus --name prometheus -f ./yamls/prometheus-values.yaml
+  when: prometheus_status.rc != 0
+
+- name: wait for prometheus to be started
+  local_action:
+    shell kubectl get pods -l app=prometheus -l component=server -o jsonpath="{.items[0].status.phase}"
+  changed_when: false
+  register: result
+  until: result.stdout.find("Running") != -1
+  retries: 20
+  delay: 20
+
+# - name: create promtheus ingress
+#   local_action:
+#     shell kubectl apply -f ./yamls/prometheus-ingress.yaml

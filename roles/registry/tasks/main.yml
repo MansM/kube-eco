@@ -1,0 +1,26 @@
+- name: check for registry
+  local_action:
+    shell helm status registry
+  register: registry_status
+  ignore_errors: true
+  changed_when: false
+
+- name: install registry through helm
+  local_action:
+    shell helm install --name registry incubator/docker-registry
+  when: registry_status.rc != 0
+
+- name: create registry ingress yaml
+      local_action:
+        template src=registry-ingress.yaml dest=./yamls/registry-ingress.yaml
+
+- name: create registry ingress
+  local_action:
+    shell kubectl apply -f ./yamls/registry-ingress.yaml
+
+- name: wait for registry to become ready
+  wait_for:
+    host: "{{ minikube_ip.stdout }}"
+    port: 30400
+    timeout: 1200
+ 

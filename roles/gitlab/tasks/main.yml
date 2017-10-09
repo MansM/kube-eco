@@ -1,0 +1,30 @@
+- name: check for gitlab
+  local_action:
+    shell helm status gitlab
+  register: gitlab_status
+  ignore_errors: true
+  changed_when: false
+
+- name: create gitlab values yaml
+  local_action:
+    template src=gitlab-values.yaml dest=./yamls/gitlab-values.yaml
+
+- name: install gitlab through helm
+  local_action:
+    shell helm install stable/gitlab-ce --values=./yamls/gitlab-values.yaml --name=gitlab
+  when: gitlab_status.rc != 0
+
+- name: get gitlab nodeport
+  local_action:
+    shell kubectl get svc gitlab-gitlab-ce -o jsonpath="{.spec.ports[1].nodePort}"
+  changed_when: false
+  register: gitlab_nodeport
+
+- name: wait for gitlab to become ready (depending on your connection, it can take a while)
+  wait_for:
+    host: "{{ minikube_ip.stdout }}"
+    port: "{{ gitlab_nodeport.stdout }}"
+    timeout: 1200
+
+- name: include gitlab demo repo
+  include_tasks: gitlab-population.yml

@@ -1,0 +1,17 @@
+server:
+  ingress:
+    enabled: true
+    hosts:
+      - prometheus.example.com
+
+alertmanager:
+  ingress:
+    enabled: true
+    hosts:
+      - alerts.example.com
+
+nodeExporter:
+  enabled: true
+
+rbac:
+  create: true

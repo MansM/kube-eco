@@ -1,0 +1,99 @@
+- name: get minikube status
+  local_action:
+    shell minikube status
+  changed_when: false
+  register: minikube_result
+
+- name: start minikube
+  command: |
+    minikube start \
+      {% if rbac_enabled and not kubeadm %} --extra-config=apiserver.Authorization.Mode=RBAC \ {% endif %}
+      {% if calico_enabled %} --network-plugin=cni --host-only-cidr 172.17.17.1/24 \
+                              --extra-config=kubelet.PodCIDR=192.168.0.0/16 \
+                              --extra-config=proxy.ClusterCIDR=192.168.0.0/16 \
+                              --extra-config=controller-manager.ClusterCIDR=192.168.0.0/16 \
+                              --extra-config=controller-manager.CIDRAllocatorType=RangeAllocator \
+                              --extra-config=controller-manager.AllocateNodeCIDRs=true \ {% endif %}
+      {% if kubeadm %} --bootstrapper kubeadm \{% endif %}                        
+      --memory {{ minikube_ram }} --cpus {{ minikube_cpus }} --kubernetes-version v{{ kubernetes_version }}
+  when: minikube_result.stdout_lines[0].find("Running") == -1
+
+- name: get minikube status
+  local_action:
+    shell minikube status
+  changed_when: false
+  register: result
+  until: result.stdout.find("Running") != -1
+  retries: 20
+  delay: 20
+
+- name: get minikube ip
+  local_action:
+    shell minikube ip
+  changed_when: false
+  register: minikube_ip
+
+- name: setting minikube ip for dnsmasq
+  local_action:
+    lineinfile path=/usr/local/etc/dnsmasq.conf regexp='^address=/example.com/' line="address=/example.com/{{ minikube_ip.stdout }}"
+  register: dnsmasq_changed
+
+- name: restart dnsmasq
+  local_action:
+    shell sudo brew services restart dnsmasq
+  when: dnsmasq_changed.changed == true
+  args:
+    warn: false
+    
+- name: wait for port22
+  wait_for:
+    host: "{{ minikube_ip.stdout }}"
+    port: 22
+
+- name: create default rbac roles yaml
+  local_action:
+    template src=minikube-rbac.yaml dest=./yamls/minikube-rbac.yaml
+
+- name: set default rbac roles
+  local_action:
+    shell kubectl apply -f ./yamls/minikube-rbac.yaml
+  when: rbac_enabled == true
+
+- name: create calico rbac roles yaml
+  local_action:
+    template src=calico-rbac.yaml dest=./yamls/calico-rbac.yaml
+  when: 
+    - calico_enabled
+    - rbac_enabled
+
+- name: install calico-rbac
+  local_action:
+    shell kubectl apply -f ./yamls/calico-rbac.yaml
+  when: 
+    - calico_enabled
+    - rbac_enabled
+
+- name: create calico yaml
+  local_action:
+    template src=calico.yaml dest=./yamls/calico.yaml
+  when: 
+    - calico_enabled
+
+- name: install calico
+  local_action:
+    shell kubectl apply -f ./yamls/calico.yaml
+  when: 
+    - calico_enabled
+
+- name: make sure time is synced with host
+  local_action:
+    shell eval $(minikube docker-env) && docker run --rm --privileged alpine hwclock -s
+  changed_when: false
+
+- name: create dashboard ingress yaml
+  local_action:
+    template src=dashboard-ingress.yaml dest=./yamls/dashboard-ingress.yaml
+
+- name: create dashboard ingress
+  local_action:
+    shell kubectl apply -f ./yamls/dashboard-ingress.yaml

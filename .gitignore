@@ -1,0 +1,6 @@
+external/*
+*.retry
+clairctl-darwin*
+klar-1.5*
+yamls/*.yaml
+repo/.git

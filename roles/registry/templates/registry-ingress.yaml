@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: registry
+  namespace: default
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: registry.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: docker-registry-registry
+          servicePort: 4000

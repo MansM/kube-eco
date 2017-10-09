@@ -1,0 +1,9 @@
+kubernetes_version: 1.7.5
+kubeadm: false
+rbac_enabled: true
+#calico is disabled due issue in cni/ingress within minikube
+calico_enabled: false
+heapster_enabled: true
+minikube_ram: 8192
+minikube_cpus: 4
+gitlab_root_password: password
