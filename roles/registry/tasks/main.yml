@@ -11,8 +11,8 @@
   when: registry_status.rc != 0
 
 - name: create registry ingress yaml
-      local_action:
-        template src=registry-ingress.yaml dest=./yamls/registry-ingress.yaml
+  local_action:
+    template src=registry-ingress.yaml dest=./yamls/registry-ingress.yaml
 
 - name: create registry ingress
   local_action:
