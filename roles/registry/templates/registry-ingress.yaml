@@ -7,7 +7,7 @@ metadata:
     ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - host: registry.example.com
+  - host: registry.{{ domainname }}
     http:
       paths:
       - path: /

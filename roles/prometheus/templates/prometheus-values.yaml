@@ -2,13 +2,13 @@ server:
   ingress:
     enabled: true
     hosts:
-      - prometheus.example.com
+      - prometheus.{{ domainname }}
 
 alertmanager:
   ingress:
     enabled: true
     hosts:
-      - alerts.example.com
+      - alerts.{{ domainname }}
 
 nodeExporter:
   enabled: true

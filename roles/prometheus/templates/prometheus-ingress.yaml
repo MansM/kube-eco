@@ -6,14 +6,14 @@ metadata:
     ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - host: prometheus.example.com
+  - host: prometheus.{{ domainname }}
     http:
       paths:
       - path: /
         backend:
           serviceName: prometheus-prometheus-server
           servicePort: 80
-  - host: alerts.example.com
+  - host: alerts.{{ domainname }}
     http:
       paths:
       - path: /

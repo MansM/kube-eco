@@ -35,7 +35,7 @@
 
 - name: setting minikube ip for dnsmasq
   local_action:
-    lineinfile path=/usr/local/etc/dnsmasq.conf regexp='^address=/example.com/' line="address=/example.com/{{ minikube_ip.stdout }}"
+    lineinfile path=/usr/local/etc/dnsmasq.conf regexp="^address=/{{ domainname }}/" line="address=/{{ domainname }}/{{ minikube_ip.stdout }}"
   register: dnsmasq_changed
 
 - name: restart dnsmasq

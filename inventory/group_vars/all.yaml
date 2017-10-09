@@ -6,4 +6,6 @@ calico_enabled: false
 heapster_enabled: true
 minikube_ram: 8192
 minikube_cpus: 4
+gitlab_image: gitlab/gitlab-ce:10.0.3-ce.0
 gitlab_root_password: password
+domainname: example.com

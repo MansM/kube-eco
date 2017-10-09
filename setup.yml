@@ -7,7 +7,7 @@
     - minikube
     - helm
     - registry
-    - jenkins
     - gitlab
+    - jenkins
     - prometheus
     
