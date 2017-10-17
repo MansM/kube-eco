@@ -48,8 +48,8 @@ Master:
 # JMXPort: 4000
 # List of plugins to be install during Jenkins master start
   InstallPlugins:
-      - branch-api:2.0.11
-      - kubernetes:0.11
+      - branch-api
+      - kubernetes
       - workflow-aggregator:2.5
       - workflow-job:2.14.1
       - credentials-binding:1.13
@@ -58,6 +58,7 @@ Master:
       - greenballs
       - blueocean
       - prometheus
+      - job-dsl
 # Used to approve a list of groovy functions in pipelines used the script-security plugin. Can be viewed under /scriptApproval
   ScriptApproval:
     - "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object"
@@ -120,24 +121,27 @@ Master:
       p.getContainers().add(c);
       p.setVolumes(Arrays.asList(pvsock, pvbin));
 
+      k.setContainerCapStr("100")
       k.addTemplate(p)
 
       Credentials c = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "demo", "description:", "root", "{{ gitlab_root_password }}")
       SystemCredentialsProvider.getInstance().getStore().addCredentials(Domain.global(), c)
 
-      def scm =  new GitSCM( GitSCM.createRepoList("http://gitlab-gitlab-ce.default/Demo/demorepo.git", "demo"), 
+      def scm =  new GitSCM( GitSCM.createRepoList("http://gitlab-gitlab-ce.default/Demo/buildslave.git", "demo"), 
                          Collections.singletonList(new BranchSpec("*/master")),
                          false, Collections.<SubmoduleConfig>emptyList(),
                          null, null,
                          Collections.<GitSCMExtension>emptyList());
 
       def flowDefinition = new org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition(scm, "Jenkinsfile")
-      def job = new org.jenkinsci.plugins.workflow.job.WorkflowJob(inst, "Demo Job")
+      def job = new org.jenkinsci.plugins.workflow.job.WorkflowJob(inst, "Buildslave-klar")
       job.definition = flowDefinition
       
       inst.save()
       inst.reload()
       job.scheduleBuild()
+      k.setContainerCapStr("100")
+      inst.save()
 
 #  - |
   #  print 'adding global pipeline libraries, register properties, bootstrap jobs...'
@@ -161,7 +165,7 @@ Master:
 Agent:
   Enabled: true
   Image: jenkinsci/jnlp-slave
-  ImageTag: 3.7-1
+  ImageTag: 3.10-1
   Component: "jenkins-slave"
   Privileged: true
   Cpu: "200m"

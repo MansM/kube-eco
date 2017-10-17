@@ -1,0 +1,28 @@
+- name: check for clair
+  local_action:
+    shell helm status clair
+  register: clair_status
+  ignore_errors: true
+  changed_when: false
+
+- name: create prometheus values yaml
+  local_action:
+    template src=clair-values.yaml dest=./yamls/clair-values.yaml
+
+- name: install clair through helm
+  local_action:
+    shell helm install external/helm-clair --name clair -f ./yamls/clair-values.yaml
+  when: clair_status.rc != 0
+
+# - name: wait for clair to be started
+#   local_action:
+#     shell kubectl get pods -l app=prometheus -l component=server -o jsonpath="{.items[0].status.phase}"
+#   changed_when: false
+#   register: result
+#   until: result.stdout.find("Running") != -1
+#   retries: 20
+#   delay: 20
+
+# - name: create promtheus ingress
+#   local_action:
+#     shell kubectl apply -f ./yamls/prometheus-ingress.yaml

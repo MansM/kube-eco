@@ -1,0 +1,80 @@
+- name: Create Gitlab project
+  gitlab_project:
+    server_url: http://{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}
+    login_user: root
+    login_password: password
+    name: "{{ reponame }}"
+    group: Demo
+    description: demo-repo
+    issues_enabled: true
+    wiki_enabled: True
+    snippets_enabled: True
+    state: present
+  register: result
+
+- name: get projectid
+  uri:
+    url: "http://gitlab.example.com/api/v4/projects?search={{ reponame }}"
+    method: GET
+    headers:
+      PRIVATE-TOKEN: "{{ token }}"
+    return_content: yes
+    follow_redirects: yes
+    status_code: 200,201
+  register: projectid
+
+- name: detect if repo already contains content
+  uri:
+    url: http://{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}/Demo/{{ reponame }}/blob/master/readme.md
+    headers:
+      PRIVATE-TOKEN: "{{ token }}"
+    return_content: yes
+    follow_redirects: no
+    method: GET
+    status_code: 200,303,404
+  register: readmedata
+
+- name: remove git config
+  file: name="repos/{{ reponame }}/.git" state=absent
+  when: readmedata.status == 303
+
+- name: create git repo
+  shell: git init
+  args:
+    chdir: repos/{{ reponame }}/
+  when: readmedata.status == 303
+
+- name: config gitrepo
+  shell: git remote add origin http://root:password@{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}/Demo/{{ reponame }}.git
+  args:
+    chdir: repos/{{ reponame }}/
+  when: readmedata.status == 303
+
+- name: create readme.md file
+  file: name="repos/{{ reponame }}/readme.md" state=touch
+  when: readmedata.status == 303
+
+- name: commit & push
+  shell: git add . && git commit -m "initial" && git push -u origin master
+  args:
+    chdir: repos/{{ reponame }}/
+  when: readmedata.status == 303
+
+- name: create initial tag
+  uri:
+    url: http://{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}/api/v4/projects/{{ projectid.json[0].id }}/repository/tags
+    method: POST
+    body_format: json
+    body:
+      id: Demo%2F{{ reponame }}
+      tag_name: 1
+      ref: master
+    headers:
+      PRIVATE-TOKEN: "{{ token }}"
+      Content-Type: "application/json"
+    return_content: yes
+    follow_redirects: yes
+    status_code: 200,201
+  delegate_to: localhost
+  when: readmedata.status == 303
+

@@ -26,5 +26,36 @@
     port: "{{ gitlab_nodeport.stdout }}"
     timeout: 1200
 
-- name: include gitlab demo repo
-  include_tasks: gitlab-population.yml
+# - name: include gitlab demo repo
+#   include_tasks: gitlab-population.yml
+
+- name: get login token
+  uri:
+    url: http://{{ minikube_ip.stdout }}:{{ gitlab_nodeport.stdout }}/api/v4/session
+    body: "login=root&password=password"
+    return_content: yes
+    follow_redirects: yes
+    method: POST
+    status_code: 200,201
+  register: logindata
+
+- name: Create Gitlab Group
+  gitlab_group:
+    server_url: http://gitlab.example.com
+    login_user: root
+    login_password: password
+    name: Demo
+    path: Demo
+    state: present
+
+- name: create buildslave repo
+  include_tasks: project.yml
+  vars:
+    token: "{{ logindata.json.private_token }}"
+    reponame: buildslave
+
+- name: get clairtestrepo
+  include_tasks: project.yml
+  vars:
+    token: "{{ logindata.json.private_token }}"
+    reponame: clairtest

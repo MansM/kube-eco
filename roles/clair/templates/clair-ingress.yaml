@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: clair
+  namespace: default
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+    nginx.org/client-max-body-size: "600m"
+    ingress.kubernetes.io/proxy-body-size: 200m
+spec:
+  rules:
+  - host: clair.{{ domainname }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: clair-clair
+          servicePort: 6060

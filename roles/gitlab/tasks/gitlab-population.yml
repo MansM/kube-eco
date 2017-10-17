@@ -39,7 +39,7 @@
     return_content: yes
     follow_redirects: no
     method: GET
-    status_code: 200,303
+    status_code: 200,303,404
   register: readmedata
 
 - name: remove git config

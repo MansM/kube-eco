@@ -14,7 +14,8 @@
                               --extra-config=controller-manager.ClusterCIDR=192.168.0.0/16 \
                               --extra-config=controller-manager.CIDRAllocatorType=RangeAllocator \
                               --extra-config=controller-manager.AllocateNodeCIDRs=true \ {% endif %}
-      {% if kubeadm %} --bootstrapper kubeadm \{% endif %}                        
+      {% if kubeadm %} --bootstrapper kubeadm \{% endif %}
+      --insecure-registry "10.0.0.0/24" \                      
       --memory {{ minikube_ram }} --cpus {{ minikube_cpus }} --kubernetes-version v{{ kubernetes_version }}
   when: minikube_result.stdout_lines[0].find("Running") == -1
 
@@ -59,6 +60,16 @@
     shell kubectl apply -f ./yamls/minikube-rbac.yaml
   when: rbac_enabled == true
 
+- name: upload cached images (only the first time minikube is started)
+  local_action:
+    shell eval $(minikube docker-env) && docker image load -i {{ item.src }}
+  with_filetree: ~/.minikube/cache/images
+  when:
+    - item.state == 'file'
+    - item.path.find("gcr.io") == -1
+    - minikube_result.stdout_lines[0].find("Running") == -1
+
+
 - name: create calico rbac roles yaml
   local_action:
     template src=calico-rbac.yaml dest=./yamls/calico-rbac.yaml
@@ -97,3 +108,20 @@
 - name: create dashboard ingress
   local_action:
     shell kubectl apply -f ./yamls/dashboard-ingress.yaml
+
+- name: fixing hostfile so docker can find the ingresses
+  local_action:
+    shell ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.minikube/machines/minikube/id_rsa docker@{{ minikube_ip.stdout }}  'sudo sed -i "/^127.0.0.1/c\127.0.0.1 localhost registry.example.com jenkins.example.com gitlab.example.com" /etc/hosts'
+
+- name: add some annotations so the ingress can handle large files (registry)
+  local_action:
+    shell kubectl annotate cm -n kube-system nginx-load-balancer-conf {{ item }}
+  with_items:
+    - "ingress.kubernetes.io/proxy-body-size=201m"
+    - "nginx.org/client-max-body-size=202m"
+  ignore_errors: true
+
+- name: scale nginx ingress down and up
+  local_action:
+    shell kubectl scale rc nginx-ingress-controller -n kube-system --replicas=0 && kubectl scale rc nginx-ingress-controller -n kube-system --replicas=1
+  when: minikube_result.stdout_lines[0].find("Running") == -1

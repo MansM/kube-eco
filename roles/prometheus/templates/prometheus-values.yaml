@@ -14,4 +14,4 @@ nodeExporter:
   enabled: true
 
 rbac:
-  create: true
+  create: {{ rbac_enabled }}

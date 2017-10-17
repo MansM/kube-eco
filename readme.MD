@@ -44,7 +44,7 @@ eval $(minikube docker-env) && docker ps
 - calico/canal when this can actually work in minikube
 
 
-## Preflight sollutions
+## Preflight solutions
 
 ### Resolver settings
 ```
@@ -61,3 +61,8 @@ brew install dnsmasq
 ```
 brew cask install minikube
 ```
+
+## Current issues
+- Jenkins doesnt really autostart first build (only after you set containers +1 and save)
+- registry ingress controller is acting weired, need to delete and create
+
