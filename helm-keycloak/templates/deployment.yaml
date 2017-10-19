@@ -1,0 +1,43 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name:  keycloak
+  namespace: keycloak
+  labels:
+    app: keycloak
+spec:
+  selector:
+    matchLabels:
+      app: keycloak
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name:  keycloak
+        app: keycloak
+    spec:
+      restartPolicy: Always
+      containers:
+      - image: jboss/keycloak-postgres:3.3.0.CR2-3
+        name:  keycloak
+        env:
+        - name:  KEYCLOAK_USER
+          value:  admin
+        - name:  KEYCLOAK_PASSWORD
+          value:  admin
+        - name:  POSTGRES_DATABASE
+          value:  keycloak
+        - name:  POSTGRES_USER
+          value:  keycloak
+        - name:  POSTGRES_PASSWORD
+          value:  keycloak
+        - name: POSTGRES_PORT_5432_TCP_ADDR
+          value: postgres
+        ports:
+        - containerPort:  8080
+          name:  keycloak
+      

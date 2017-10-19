@@ -27,4 +27,18 @@
     host: "{{ minikube_ip.stdout }}"
     port: 30400
     timeout: 1200
+
+- name: add some annotations so the ingress can handle large files (registry)
+  local_action:
+    shell kubectl annotate cm -n kube-system nginx-load-balancer-conf {{ item }}
+  with_items:
+    - "ingress.kubernetes.io/proxy-body-size=201m"
+    - "nginx.org/client-max-body-size=202m"
+  ignore_errors: true
+
+- name: scale nginx ingress down and up
+  local_action:
+    shell kubectl scale rc nginx-ingress-controller -n kube-system --replicas=0 && sleep 5 && kubectl scale rc nginx-ingress-controller -n kube-system --replicas=1
+  when: minikube_result.stdout_lines[0].find("Running") == -1
+
  

@@ -9,4 +9,4 @@ minikube_cpus: 4
 gitlab_image: gitlab/gitlab-ce:10.0.3-ce.0
 gitlab_root_password: password
 domainname: example.com
-jenkins_version: 2.84
+jenkins_version: 2.85

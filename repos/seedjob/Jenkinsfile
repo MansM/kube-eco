@@ -1,0 +1,44 @@
+// pipelineJob("clairtest") {
+node {
+  stage('clairtest') {
+      jobDsl sandbox: true, scriptText: '''  
+        pipelineJob("ClairTest") {
+          definition {
+            cpsScm {
+              scriptPath("Jenkinsfile")
+              scm {
+                git {
+                  remote {
+                    credentials('demo')
+                    url('http://gitlab-gitlab-ce.default/Demo/clairtest.git')
+                  }
+                }
+              }
+            }
+          }
+      }'''
+  }
+
+  stage('buildslave') {
+      jobDsl sandbox: true, scriptText: '''  
+        pipelineJob("Buildslave-clair") {
+          definition {
+            cpsScm {
+              scriptPath("Jenkinsfile")
+              scm {
+                git {
+                  remote {
+                    credentials('demo')
+                    url('http://gitlab-gitlab-ce.default/Demo/buildslave.git')
+                  }
+                }
+              }
+            }
+          }
+      }'''
+  }
+
+  stage('Build buildslave') {
+    build job: 'Buildslave-clair', wait: false
+  }
+}

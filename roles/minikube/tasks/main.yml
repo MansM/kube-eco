@@ -111,17 +111,10 @@
 
 - name: fixing hostfile so docker can find the ingresses
   local_action:
-    shell ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.minikube/machines/minikube/id_rsa docker@{{ minikube_ip.stdout }}  'sudo sed -i "/^127.0.0.1/c\127.0.0.1 localhost registry.example.com jenkins.example.com gitlab.example.com" /etc/hosts'
-
-- name: add some annotations so the ingress can handle large files (registry)
-  local_action:
-    shell kubectl annotate cm -n kube-system nginx-load-balancer-conf {{ item }}
-  with_items:
-    - "ingress.kubernetes.io/proxy-body-size=201m"
-    - "nginx.org/client-max-body-size=202m"
-  ignore_errors: true
-
-- name: scale nginx ingress down and up
-  local_action:
-    shell kubectl scale rc nginx-ingress-controller -n kube-system --replicas=0 && kubectl scale rc nginx-ingress-controller -n kube-system --replicas=1
-  when: minikube_result.stdout_lines[0].find("Running") == -1
+    shell ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.minikube/machines/minikube/id_rsa docker@{{ minikube_ip.stdout }}  'sudo sed -i "/^127.0.0.1/c\127.0.0.1 localhost {{ hosts | join ('.example.com ') }}.example.com" /etc/hosts'
+  vars:
+    hosts:
+    - keycloak
+    - registry
+    - jenkins
+    - gitlab

@@ -5,7 +5,7 @@
   ignore_errors: true
   changed_when: false
 
-- name: create prometheus values yaml
+- name: create clair values yaml
   local_action:
     template src=clair-values.yaml dest=./yamls/clair-values.yaml
 

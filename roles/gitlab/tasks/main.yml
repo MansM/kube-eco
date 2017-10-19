@@ -48,13 +48,19 @@
     path: Demo
     state: present
 
+- name: create seedjob repo
+  include_tasks: project.yml
+  vars:
+    token: "{{ logindata.json.private_token }}"
+    reponame: seedjob
+
 - name: create buildslave repo
   include_tasks: project.yml
   vars:
     token: "{{ logindata.json.private_token }}"
     reponame: buildslave
 
-- name: get clairtestrepo
+- name: create clairtestrepo
   include_tasks: project.yml
   vars:
     token: "{{ logindata.json.private_token }}"

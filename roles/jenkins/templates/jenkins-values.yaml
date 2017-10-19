@@ -56,9 +56,10 @@ Master:
       - git:3.6.0
       - docker-commons
       - greenballs
-      - blueocean
       - prometheus
       - job-dsl
+      - authorize-project
+      - blueocean
 # Used to approve a list of groovy functions in pipelines used the script-security plugin. Can be viewed under /scriptApproval
   ScriptApproval:
     - "method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object"
@@ -75,6 +76,11 @@ Master:
       import org.jenkinsci.plugins.docker.commons.*
       import org.jenkinsci.plugins.docker.commons.tools.*
 
+      import org.jenkinsci.plugins.authorizeproject.*
+      import org.jenkinsci.plugins.authorizeproject.strategy.SpecificUsersAuthorizationStrategy;
+
+      import org.jenkins.security.*
+      import jenkins.security.QueueItemAuthenticatorConfiguration;
       import hudson.plugins.git.*
       import hudson.plugins.git.extensions.GitSCMExtension;
       import hudson.tools.ToolLocationNodeProperty;
@@ -101,6 +107,15 @@ Master:
 
       desc.save()
 
+      final Set<String> defaultProtocols = Collections.unmodifiableSet(inst.getAgentProtocols());
+      final Set<String> newProtocols = new HashSet<>(defaultProtocols);
+      newProtocols.add("JNLP2-connect");
+      newProtocols.remove("JNLP4-connect");
+      newProtocols.remove("JNLP3-connect");
+      newProtocols.remove("CLI-connect");
+      newProtocols.remove("CLI2-connect");
+      inst.setAgentProtocols(newProtocols);
+
       k = inst.getCloud("kubernetes")
 
       def p = new PodTemplate()
@@ -123,25 +138,33 @@ Master:
 
       k.setContainerCapStr("100")
       k.addTemplate(p)
+      k.setConnectTimeout(100)
 
       Credentials c = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, "demo", "description:", "root", "{{ gitlab_root_password }}")
       SystemCredentialsProvider.getInstance().getStore().addCredentials(Domain.global(), c)
 
-      def scm =  new GitSCM( GitSCM.createRepoList("http://gitlab-gitlab-ce.default/Demo/buildslave.git", "demo"), 
+      def scm =  new GitSCM( GitSCM.createRepoList("http://gitlab-gitlab-ce.default/Demo/seedjob.git", "demo"), 
                          Collections.singletonList(new BranchSpec("*/master")),
                          false, Collections.<SubmoduleConfig>emptyList(),
                          null, null,
                          Collections.<GitSCMExtension>emptyList());
 
       def flowDefinition = new org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition(scm, "Jenkinsfile")
-      def job = new org.jenkinsci.plugins.workflow.job.WorkflowJob(inst, "Buildslave-klar")
+      def job = new org.jenkinsci.plugins.workflow.job.WorkflowJob(inst, "_SeedJob")
+      job.addProperty(new AuthorizeProjectProperty(new SpecificUsersAuthorizationStrategy("admin")));
       job.definition = flowDefinition
+      job.addProperty(new AuthorizeProjectProperty(new SpecificUsersAuthorizationStrategy("admin")));
+      // QueueItemAuthenticatorConfiguration.get().authenticators.add(new SpecificUsersAuthorizationStrategy("admin"))
       
+      Map<String, Boolean> strategies = new HashMap<String, Boolean>(); 
+      strategies.put(inst.getDescriptor(SpecificUsersAuthorizationStrategy.class).getId(), true); 
+      QueueItemAuthenticatorConfiguration.get().getAuthenticators().add(new ProjectQueueItemAuthenticator(strategies));
+
+      k.setContainerCapStr("100")
+      job.scheduleBuild()
       inst.save()
       inst.reload()
-      job.scheduleBuild()
-      k.setContainerCapStr("100")
-      inst.save()
+      
 
 #  - |
   #  print 'adding global pipeline libraries, register properties, bootstrap jobs...'
